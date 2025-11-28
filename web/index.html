@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Breast Histopathology AI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Breast Histopathology AI</h1>
+      <p class="subtitle">AI-powered slide and patch analysis</p>
+    </header>
+
+    <main>
+      <!-- Upload form -->
+      <form id="uploadForm" class="upload-form">
+        <label for="imageInput" class="file-label">Select slide or patch images</label>
+        <input type="file" id="imageInput" name="files" multiple accept="image/*">
+
+        <input type="text" id="slideId" name="slide_id" placeholder="Enter Slide ID (optional)">
+        
+        <button type="submit" class="btn-primary">Run Prediction</button>
+      </form>
+
+      <!-- Preview area -->
+      <div id="preview" class="preview"></div>
+
+      <!-- Results -->
+      <section id="results" class="results"></section>
+    </main>
+
+    <footer>
+      <p>© 2025 Breast Histopathology AI | Powered by FastAPI & PyTorch</p>
+    </footer>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

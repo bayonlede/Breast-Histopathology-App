@@ -1,0 +1,96 @@
+/* Global styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: #f0f4f8;
+}
+
+/* Container */
+.app-container {
+  max-width: 900px;
+  margin: 40px auto;
+  background: #ffffff10;
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+header h1 {
+  font-size: 2.2em;
+  color: #fff;
+}
+.subtitle {
+  font-size: 1.1em;
+  color: #d1d9e6;
+}
+
+/* Form */
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.file-label {
+  font-weight: bold;
+  color: #f0f4f8;
+}
+input[type="file"], input[type="text"] {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+}
+.btn-primary {
+  background: #ff6b6b;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+.btn-primary:hover {
+  background: #ff4757;
+}
+
+/* Preview */
+.preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.preview img {
+  max-width: 150px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Results */
+.results {
+  margin-top: 20px;
+}
+.result-card {
+  background: #ffffff20;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.9em;
+  color: #d1d9e6;
+}

@@ -1,0 +1,19 @@
+# Core deep learning
+torch
+torchvision
+
+# Web API framework
+fastapi
+uvicorn[standard]   # ASGI server to run FastAPI
+
+# Image processing
+pillow             # for handling images (PIL)
+opencv-python      # optional, for advanced image preprocessing
+
+# Data handling
+pandas             # for CSVs and metadata
+numpy              # numerical operations
+
+# Deployment helpers
+python-multipart   # required for file uploads in FastAPI
+ 
