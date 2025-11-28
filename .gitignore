@@ -1,0 +1,22 @@
+# Ignore virtual environments
+.venv/
+venv/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore logs and system files
+*.log
+.DS_Store
+
+# Ignore data and model binaries (optional)
+data/
+models/*.pt
+models/*.pth
+
+.env
+data/
+models/*.pt
+models/*.pth
+
