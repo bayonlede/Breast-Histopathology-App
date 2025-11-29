@@ -1,6 +1,8 @@
 # api.py
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from PIL import Image
 import torch
 import torchvision.transforms as transforms
@@ -11,6 +13,9 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 app = FastAPI(title="Breast Histopathology AI")
+
+# Serve static files (CSS, JS) from the web folder
+app.mount("/static", StaticFiles(directory="web"), name="static")
 
 # Allow frontend calls
 app.add_middleware(
@@ -71,5 +76,11 @@ async def predict(
 
 @app.get("/")
 def root():
+    """Serve the main web application"""
+    return FileResponse("web/index.html")
+
+@app.get("/health")
+def health():
+    """Health check endpoint"""
     return {"message": "✅ Breast Histopathology AI API is running!"}
  

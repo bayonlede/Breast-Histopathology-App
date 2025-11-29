@@ -2,8 +2,8 @@
 // HISTOPATH AI - Main Application Logic
 // ═══════════════════════════════════════════════════════════
 
-// Change this to your deployed URL when ready (e.g., "https://breast-histo-app.up.railway.app/predict")
-const API_URL = "http://localhost:8000/predict";
+// Use relative URL - works on both localhost and production
+const API_URL = "/predict";
 
 // DOM Elements
 const form = document.getElementById("uploadForm");
@@ -243,7 +243,7 @@ function simulateProgress() {
 async function checkApiStatus() {
   const statusEl = document.getElementById("apiStatus");
   try {
-    const response = await fetch(API_URL.replace("/predict", "/"));
+    const response = await fetch("/health");
     if (response.ok) {
       statusEl.innerHTML = `<span class="status-dot"></span><span>API Connected</span>`;
       statusEl.style.background = "var(--success-bg)";
