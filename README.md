@@ -19,3 +19,7 @@ It improves accuracy in identifying invasive tumors, lymph node metastasis, and 
 - **Improved accuracy**: Deep learning excels at detecting invasive breast tumors and lymph node metastasis.  
 - **Early detection**: Identifying early-stage cancer cells drastically improves prognosis.  
 - **Error reduction**: AI helps minimize avoidable diagnostic mistakes.  
+<<<<<<< HEAD
+=======
+
+>>>>>>> 253b36a2e5d4ae917dfc023e78cb36614ec57a14
