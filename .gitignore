@@ -10,13 +10,12 @@ __pycache__/
 *.log
 .DS_Store
 
-# Ignore data and model binaries (optional)
+# Ignore data folder
 data/
-models/*.pt
-models/*.pth
 
+# Environment files
 .env
-data/
-models/*.pt
-models/*.pth
+
+# Keep the trained model (needed for deployment)
+!models/best_model.pth
 
