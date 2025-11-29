@@ -65,7 +65,7 @@
       <header class="header">
         <div class="header-left">
           <h1>Breast Histopathology Analysis</h1>
-          <p class="header-subtitle">Upload tissue slides for AI-powered cancer detection</p>
+          <p class="header-subtitle">Upload tissue slides or folders for AI-powered cancer detection</p>
         </div>
         <div class="header-right">
           <div class="api-status" id="apiStatus">
@@ -80,32 +80,76 @@
         <section class="upload-section">
           <div class="section-header">
             <h2>Upload Slides</h2>
+            
+            <!-- Upload Mode Toggle -->
+            <div class="upload-mode-toggle">
+              <button type="button" class="mode-btn active" data-mode="files" id="filesModeBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21,15 16,10 5,21"/>
+                </svg>
+                Images
+              </button>
+              <button type="button" class="mode-btn" data-mode="folder" id="folderModeBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                Folder
+              </button>
+            </div>
           </div>
           
           <form id="uploadForm">
+            <!-- Dropzone for Files -->
             <div class="dropzone" id="dropzone">
               <div class="dropzone-content">
-                <div class="dropzone-icon">
+                <div class="dropzone-icon" id="dropzoneIcon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="17,8 12,3 7,8"/>
                     <line x1="12" y1="3" x2="12" y2="15"/>
                   </svg>
                 </div>
-                <p class="dropzone-text">Drag & drop histopathology images</p>
-                <p class="dropzone-subtext">or click to browse</p>
-                <span class="dropzone-formats">PNG, JPG, TIFF up to 50MB</span>
+                <p class="dropzone-text" id="dropzoneText">Drag & drop histopathology images</p>
+                <p class="dropzone-subtext" id="dropzoneSubtext">or click to browse files</p>
+                <span class="dropzone-formats">PNG, JPG, TIFF up to 50MB each</span>
               </div>
+              <!-- File input for images -->
               <input type="file" id="imageInput" name="files" multiple accept="image/*" hidden>
+              <!-- Folder input -->
+              <input type="file" id="folderInput" name="folder" webkitdirectory directory multiple accept="image/*" hidden>
             </div>
 
-            <div class="form-row">
+            <!-- Slide ID Input (only for file mode) -->
+            <div class="form-row" id="slideIdRow">
               <div class="input-group">
                 <label for="slideId">Slide Identifier</label>
                 <input type="text" id="slideId" name="slide_id" placeholder="e.g., PATIENT-001-SLIDE-A">
               </div>
             </div>
 
+            <!-- Slides Queue (for folder mode) -->
+            <div class="slides-queue" id="slidesQueue">
+              <div class="queue-header">
+                <span class="queue-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  Slides Queue
+                </span>
+                <button type="button" class="btn-clear-queue" id="clearQueueBtn">Clear All</button>
+              </div>
+              <div class="queue-list" id="queueList">
+                <!-- Slide cards will be added here -->
+              </div>
+              <div class="queue-summary" id="queueSummary">
+                <span id="totalSlides">0 slides</span>
+                <span id="totalPatches">0 patches</span>
+              </div>
+            </div>
+
+            <!-- Preview Section (for file mode) -->
             <div class="preview-section" id="previewSection">
               <div class="preview-header">
                 <span class="preview-title">Selected Images</span>
@@ -119,7 +163,7 @@
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 6v6l4 2"/>
               </svg>
-              <span>Run Analysis</span>
+              <span id="submitBtnText">Run Analysis</span>
             </button>
           </form>
         </section>
@@ -128,6 +172,14 @@
         <section class="results-section">
           <div class="section-header">
             <h2>Analysis Results</h2>
+            <button type="button" class="btn-export" id="exportBtn" style="display: none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7,10 12,15 17,10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export
+            </button>
           </div>
           
           <div class="results-container" id="results">
@@ -152,7 +204,8 @@
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-content">
       <div class="loading-spinner"></div>
-      <p class="loading-text">Analyzing tissue samples...</p>
+      <p class="loading-text" id="loadingText">Analyzing tissue samples...</p>
+      <p class="loading-subtext" id="loadingSubtext"></p>
       <div class="loading-progress">
         <div class="loading-bar" id="loadingBar"></div>
       </div>
