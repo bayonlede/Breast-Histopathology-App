@@ -26,7 +26,7 @@ MODEL_PATH = "models/best_model.pth"
 model = torch.hub.load("pytorch/vision", "resnet50", pretrained=False)
 num_classes = 2
 model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
-model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
+model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu"), weights_only=False))
 model.eval()
 
 # Transforms

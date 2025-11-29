@@ -2,37 +2,161 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Breast Histopathology AI</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HistoPath AI | Breast Cancer Detection</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app-container">
-    <header>
-      <h1>Breast Histopathology AI</h1>
-      <p class="subtitle">AI-powered slide and patch analysis</p>
-    </header>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <span class="logo-text">HistoPath<span class="accent">AI</span></span>
+      </div>
+      
+      <nav class="nav">
+        <a href="#" class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M9 9h6v6H9z"/>
+          </svg>
+          Analysis
+        </a>
+        <a href="#" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20V10"/>
+            <path d="M18 20V4"/>
+            <path d="M6 20v-4"/>
+          </svg>
+          History
+        </a>
+        <a href="#" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v10"/>
+            <path d="m4.22 4.22 4.24 4.24m7.08 7.08 4.24 4.24"/>
+            <path d="M1 12h6m6 0h10"/>
+            <path d="m4.22 19.78 4.24-4.24m7.08-7.08 4.24-4.24"/>
+          </svg>
+          Settings
+        </a>
+      </nav>
 
-    <main>
-      <!-- Upload form -->
-      <form id="uploadForm" class="upload-form">
-        <label for="imageInput" class="file-label">Select slide or patch images</label>
-        <input type="file" id="imageInput" name="files" multiple accept="image/*">
+      <div class="sidebar-footer">
+        <div class="model-info">
+          <span class="model-badge">ResNet-50</span>
+          <span class="model-status">● Model Ready</span>
+        </div>
+      </div>
+    </aside>
 
-        <input type="text" id="slideId" name="slide_id" placeholder="Enter Slide ID (optional)">
-        
-        <button type="submit" class="btn-primary">Run Prediction</button>
-      </form>
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <h1>Breast Histopathology Analysis</h1>
+          <p class="header-subtitle">Upload tissue slides for AI-powered cancer detection</p>
+        </div>
+        <div class="header-right">
+          <div class="api-status" id="apiStatus">
+            <span class="status-dot"></span>
+            <span>API Connected</span>
+          </div>
+        </div>
+      </header>
 
-      <!-- Preview area -->
-      <div id="preview" class="preview"></div>
+      <div class="content-grid">
+        <!-- Upload Section -->
+        <section class="upload-section">
+          <div class="section-header">
+            <h2>Upload Slides</h2>
+          </div>
+          
+          <form id="uploadForm">
+            <div class="dropzone" id="dropzone">
+              <div class="dropzone-content">
+                <div class="dropzone-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17,8 12,3 7,8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <p class="dropzone-text">Drag & drop histopathology images</p>
+                <p class="dropzone-subtext">or click to browse</p>
+                <span class="dropzone-formats">PNG, JPG, TIFF up to 50MB</span>
+              </div>
+              <input type="file" id="imageInput" name="files" multiple accept="image/*" hidden>
+            </div>
 
-      <!-- Results -->
-      <section id="results" class="results"></section>
+            <div class="form-row">
+              <div class="input-group">
+                <label for="slideId">Slide Identifier</label>
+                <input type="text" id="slideId" name="slide_id" placeholder="e.g., PATIENT-001-SLIDE-A">
+              </div>
+            </div>
+
+            <div class="preview-section" id="previewSection">
+              <div class="preview-header">
+                <span class="preview-title">Selected Images</span>
+                <button type="button" class="btn-clear" id="clearBtn">Clear All</button>
+              </div>
+              <div class="preview-grid" id="preview"></div>
+            </div>
+
+            <button type="submit" class="btn-analyze" id="submitBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              <span>Run Analysis</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section">
+          <div class="section-header">
+            <h2>Analysis Results</h2>
+          </div>
+          
+          <div class="results-container" id="results">
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                  <rect x="9" y="3" width="6" height="4" rx="1"/>
+                  <path d="M9 14l2 2 4-4"/>
+                </svg>
+              </div>
+              <p>Upload images to begin analysis</p>
+              <span>Results will appear here</span>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
+  </div>
 
-    <footer>
-      <p>© 2025 Breast Histopathology AI | Powered by FastAPI & PyTorch</p>
-    </footer>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Analyzing tissue samples...</p>
+      <div class="loading-progress">
+        <div class="loading-bar" id="loadingBar"></div>
+      </div>
+    </div>
   </div>
 
   <script src="main.js"></script>

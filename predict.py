@@ -17,7 +17,7 @@ num_classes = 2  # benign vs malignant
 model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
 
 # Load trained weights
-model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
+model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu"), weights_only=False))
 model.eval()  # evaluation mode
 
 # ---------------------------------------------------

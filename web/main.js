@@ -1,43 +1,120 @@
-const form = document.getElementById("uploadForm");
-const resultsDiv = document.getElementById("results");
-const previewDiv = document.getElementById("preview");
+// ═══════════════════════════════════════════════════════════
+// HISTOPATH AI - Main Application Logic
+// ═══════════════════════════════════════════════════════════
 
-// Change this to your backend URL when deployed
+// Change this to your deployed URL when ready (e.g., "https://breast-histo-app.up.railway.app/predict")
 const API_URL = "http://localhost:8000/predict";
 
-// Preview selected images
-document.getElementById("imageInput").addEventListener("change", (event) => {
-  previewDiv.innerHTML = "";
-  const files = event.target.files;
-  for (let file of files) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = document.createElement("img");
-      img.src = e.target.result;
-      previewDiv.appendChild(img);
-    };
-    reader.readAsDataURL(file);
-  }
+// DOM Elements
+const form = document.getElementById("uploadForm");
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("imageInput");
+const previewSection = document.getElementById("previewSection");
+const previewGrid = document.getElementById("preview");
+const resultsContainer = document.getElementById("results");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const loadingBar = document.getElementById("loadingBar");
+const clearBtn = document.getElementById("clearBtn");
+const submitBtn = document.getElementById("submitBtn");
+
+let selectedFiles = [];
+
+// ═══════════════════════════════════════════════════════════
+// DROPZONE FUNCTIONALITY
+// ═══════════════════════════════════════════════════════════
+
+dropzone.addEventListener("click", () => fileInput.click());
+
+dropzone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropzone.classList.add("dragover");
 });
 
-// Handle form submit
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  resultsDiv.innerHTML = "⏳ Processing...";
+dropzone.addEventListener("dragleave", () => {
+  dropzone.classList.remove("dragover");
+});
 
-  const files = document.getElementById("imageInput").files;
-  const slideId = document.getElementById("slideId").value;
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+  addFiles(files);
+});
 
-  if (files.length === 0) {
-    resultsDiv.innerHTML = "⚠️ Please select at least one image.";
+fileInput.addEventListener("change", (e) => {
+  const files = Array.from(e.target.files);
+  addFiles(files);
+});
+
+// ═══════════════════════════════════════════════════════════
+// FILE HANDLING
+// ═══════════════════════════════════════════════════════════
+
+function addFiles(files) {
+  selectedFiles = [...selectedFiles, ...files];
+  updatePreview();
+}
+
+function removeFile(index) {
+  selectedFiles.splice(index, 1);
+  updatePreview();
+}
+
+function updatePreview() {
+  if (selectedFiles.length === 0) {
+    previewSection.classList.remove("active");
     return;
   }
 
-  const formData = new FormData();
-  for (let file of files) {
-    formData.append("files", file);
+  previewSection.classList.add("active");
+  previewGrid.innerHTML = "";
+
+  selectedFiles.forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const item = document.createElement("div");
+      item.className = "preview-item";
+      item.innerHTML = `
+        <img src="${e.target.result}" alt="${file.name}">
+        <button type="button" class="remove-btn" data-index="${index}">×</button>
+      `;
+      previewGrid.appendChild(item);
+
+      // Add remove listener
+      item.querySelector(".remove-btn").addEventListener("click", () => removeFile(index));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+clearBtn.addEventListener("click", () => {
+  selectedFiles = [];
+  fileInput.value = "";
+  updatePreview();
+});
+
+// ═══════════════════════════════════════════════════════════
+// FORM SUBMISSION
+// ═══════════════════════════════════════════════════════════
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (selectedFiles.length === 0) {
+    showError("Please select at least one image to analyze.");
+    return;
   }
-  formData.append("slide_id", slideId || "unknown_slide");
+
+  const slideId = document.getElementById("slideId").value || "Unnamed Slide";
+
+  // Show loading
+  showLoading();
+  simulateProgress();
+
+  // Prepare form data
+  const formData = new FormData();
+  selectedFiles.forEach(file => formData.append("files", file));
+  formData.append("slide_id", slideId);
 
   try {
     const response = await fetch(API_URL, {
@@ -45,30 +122,143 @@ form.addEventListener("submit", async (event) => {
       body: formData
     });
 
+    if (!response.ok) throw new Error("Server error");
+
     const data = await response.json();
-    resultsDiv.innerHTML = "";
-
-    // Single prediction
-    if (data.prediction) {
-      const card = document.createElement("div");
-      card.className = "result-card";
-      card.innerHTML = `<strong>${data.filename}</strong>: ${data.prediction}`;
-      resultsDiv.appendChild(card);
-    }
-    // Multiple predictions grouped by slide
-    else if (data.patch_predictions) {
-      const header = document.createElement("h3");
-      header.textContent = `Slide: ${data.slide_id} (${data.num_patches} patches)`;
-      resultsDiv.appendChild(header);
-
-      data.patch_predictions.forEach(patch => {
-        const card = document.createElement("div");
-        card.className = "result-card";
-        card.innerHTML = `<strong>${patch.filename}</strong>: ${patch.prediction}`;
-        resultsDiv.appendChild(card);
-      });
-    }
+    hideLoading();
+    displayResults(data);
   } catch (err) {
-    resultsDiv.innerHTML = `❌ Error: ${err.message}`;
+    hideLoading();
+    showError(`Analysis failed: ${err.message}`);
   }
 });
+
+// ═══════════════════════════════════════════════════════════
+// RESULTS DISPLAY
+// ═══════════════════════════════════════════════════════════
+
+function displayResults(data) {
+  const predictions = data.patch_predictions || [];
+  const benignCount = predictions.filter(p => p.prediction === "benign").length;
+  const malignantCount = predictions.filter(p => p.prediction === "malignant").length;
+
+  resultsContainer.innerHTML = `
+    <div class="results-header">
+      <div class="results-title">
+        <h3>Analysis Complete</h3>
+        <span class="slide-badge">${data.slide_id}</span>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value total">${data.num_patches}</div>
+          <div class="stat-label">Total Patches</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value benign">${benignCount}</div>
+          <div class="stat-label">Benign</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value malignant">${malignantCount}</div>
+          <div class="stat-label">Malignant</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="predictions-list">
+      ${predictions.map(p => `
+        <div class="prediction-card ${p.prediction}">
+          <div class="prediction-icon">${p.prediction === "benign" ? "✓" : "⚠"}</div>
+          <div class="prediction-info">
+            <div class="prediction-filename">${p.filename}</div>
+            <div class="prediction-result">${p.prediction}</div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  // Animate cards
+  const cards = resultsContainer.querySelectorAll(".prediction-card");
+  cards.forEach((card, i) => {
+    card.style.opacity = "0";
+    card.style.transform = "translateX(-20px)";
+    setTimeout(() => {
+      card.style.transition = "all 0.3s ease";
+      card.style.opacity = "1";
+      card.style.transform = "translateX(0)";
+    }, i * 50);
+  });
+}
+
+function showError(message) {
+  resultsContainer.innerHTML = `
+    <div class="empty-state" style="color: var(--danger);">
+      <div class="empty-icon" style="background: var(--danger-bg);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--danger);">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <p>${message}</p>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOADING STATE
+// ═══════════════════════════════════════════════════════════
+
+function showLoading() {
+  loadingOverlay.classList.add("active");
+  loadingBar.style.width = "0%";
+  submitBtn.disabled = true;
+}
+
+function hideLoading() {
+  loadingBar.style.width = "100%";
+  setTimeout(() => {
+    loadingOverlay.classList.remove("active");
+    submitBtn.disabled = false;
+  }, 300);
+}
+
+function simulateProgress() {
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 15;
+    if (progress >= 90) {
+      clearInterval(interval);
+      progress = 90;
+    }
+    loadingBar.style.width = `${progress}%`;
+  }, 200);
+}
+
+// ═══════════════════════════════════════════════════════════
+// API STATUS CHECK
+// ═══════════════════════════════════════════════════════════
+
+async function checkApiStatus() {
+  const statusEl = document.getElementById("apiStatus");
+  try {
+    const response = await fetch(API_URL.replace("/predict", "/"));
+    if (response.ok) {
+      statusEl.innerHTML = `<span class="status-dot"></span><span>API Connected</span>`;
+      statusEl.style.background = "var(--success-bg)";
+      statusEl.style.borderColor = "rgba(16, 185, 129, 0.2)";
+      statusEl.style.color = "var(--success)";
+    } else {
+      throw new Error();
+    }
+  } catch {
+    statusEl.innerHTML = `<span class="status-dot" style="background: var(--danger)"></span><span>API Offline</span>`;
+    statusEl.style.background = "var(--danger-bg)";
+    statusEl.style.borderColor = "rgba(239, 68, 68, 0.2)";
+    statusEl.style.color = "var(--danger)";
+  }
+}
+
+// Check API status on load
+checkApiStatus();
