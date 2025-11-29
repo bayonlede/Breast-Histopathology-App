@@ -1,180 +1,327 @@
 // ═══════════════════════════════════════════════════════════
-// HISTOPATH AI - Main Application Logic
-// Supports both individual files and folder (slide-level) uploads
+// HISTOPATH AI - Enhanced Application
+// Professional Breast Cancer Detection Interface
 // ═══════════════════════════════════════════════════════════
 
 const API_URL = "/predict";
 
-// DOM Elements
-const form = document.getElementById("uploadForm");
-const dropzone = document.getElementById("dropzone");
-const fileInput = document.getElementById("imageInput");
-const folderInput = document.getElementById("folderInput");
-const previewSection = document.getElementById("previewSection");
-const previewGrid = document.getElementById("preview");
-const resultsContainer = document.getElementById("results");
-const loadingOverlay = document.getElementById("loadingOverlay");
-const loadingBar = document.getElementById("loadingBar");
-const loadingText = document.getElementById("loadingText");
-const loadingSubtext = document.getElementById("loadingSubtext");
-const clearBtn = document.getElementById("clearBtn");
-const submitBtn = document.getElementById("submitBtn");
-const submitBtnText = document.getElementById("submitBtnText");
-const exportBtn = document.getElementById("exportBtn");
+// ═══════════════════════════════════════════════════════════
+// DOM ELEMENTS
+// ═══════════════════════════════════════════════════════════
 
-// Queue elements
-const slidesQueue = document.getElementById("slidesQueue");
-const queueList = document.getElementById("queueList");
-const clearQueueBtn = document.getElementById("clearQueueBtn");
-const totalSlidesEl = document.getElementById("totalSlides");
-const totalPatchesEl = document.getElementById("totalPatches");
-const slideIdRow = document.getElementById("slideIdRow");
+const elements = {
+  // Forms & Inputs
+  form: document.getElementById("uploadForm"),
+  dropzone: document.getElementById("dropzone"),
+  fileInput: document.getElementById("imageInput"),
+  folderInput: document.getElementById("folderInput"),
+  slideIdInput: document.getElementById("slideId"),
+  slideIdRow: document.getElementById("slideIdRow"),
+  
+  // Preview
+  previewSection: document.getElementById("previewSection"),
+  previewGrid: document.getElementById("preview"),
+  previewCount: document.getElementById("previewCount"),
+  clearBtn: document.getElementById("clearBtn"),
+  
+  // Queue
+  slidesQueue: document.getElementById("slidesQueue"),
+  queueList: document.getElementById("queueList"),
+  clearQueueBtn: document.getElementById("clearQueueBtn"),
+  totalSlides: document.getElementById("totalSlides"),
+  totalPatches: document.getElementById("totalPatches"),
+  
+  // Results
+  resultsContainer: document.getElementById("results"),
+  resultsActions: document.getElementById("resultsActions"),
+  
+  // Buttons
+  submitBtn: document.getElementById("submitBtn"),
+  submitBtnText: document.getElementById("submitBtnText"),
+  filesModeBtn: document.getElementById("filesModeBtn"),
+  folderModeBtn: document.getElementById("folderModeBtn"),
+  exportCsvBtn: document.getElementById("exportCsvBtn"),
+  exportPdfBtn: document.getElementById("exportPdfBtn"),
+  
+  // Dropzone text
+  dropzoneText: document.getElementById("dropzoneText"),
+  dropzoneSubtext: document.getElementById("dropzoneSubtext"),
+  dropzoneIcon: document.getElementById("dropzoneIcon"),
+  
+  // Loading
+  loadingOverlay: document.getElementById("loadingOverlay"),
+  loadingBar: document.getElementById("loadingBar"),
+  loadingText: document.getElementById("loadingText"),
+  loadingSubtext: document.getElementById("loadingSubtext"),
+  
+  // Status
+  apiStatus: document.getElementById("apiStatus"),
+  
+  // Patient Info
+  patientInfoToggle: document.getElementById("patientInfoToggle"),
+  patientInfoForm: document.getElementById("patientInfoForm"),
+  
+  // Pages
+  analysisPage: document.getElementById("analysisPage"),
+  historyPage: document.getElementById("historyPage"),
+  settingsPage: document.getElementById("settingsPage"),
+  historyContainer: document.getElementById("historyContainer"),
+  historyBadge: document.getElementById("historyBadge"),
+  
+  // Lightbox
+  lightbox: document.getElementById("lightbox"),
+  lightboxImage: document.getElementById("lightboxImage"),
+  lightboxInfo: document.getElementById("lightboxInfo"),
+  lightboxClose: document.getElementById("lightboxClose"),
+  lightboxPrev: document.getElementById("lightboxPrev"),
+  lightboxNext: document.getElementById("lightboxNext"),
+  
+  // Toast
+  toastContainer: document.getElementById("toastContainer"),
+  
+  // Theme
+  themeToggle: document.getElementById("themeToggle"),
+  darkModeToggle: document.getElementById("darkModeToggle"),
+  
+  // Settings
+  autoExpandToggle: document.getElementById("autoExpandToggle"),
+  showConfidenceToggle: document.getElementById("showConfidenceToggle"),
+  clearHistoryBtn: document.getElementById("clearHistoryBtn")
+};
 
-// Mode toggle elements
-const filesModeBtn = document.getElementById("filesModeBtn");
-const folderModeBtn = document.getElementById("folderModeBtn");
-const dropzoneText = document.getElementById("dropzoneText");
-const dropzoneSubtext = document.getElementById("dropzoneSubtext");
-const dropzoneIcon = document.getElementById("dropzoneIcon");
+// ═══════════════════════════════════════════════════════════
+// STATE MANAGEMENT
+// ═══════════════════════════════════════════════════════════
 
-// State
-let uploadMode = "files"; // "files" or "folder"
-let selectedFiles = [];
-let slidesData = []; // Array of { slideId, files }
-let allResults = []; // Store all results for export
+const state = {
+  uploadMode: "files",
+  selectedFiles: [],
+  slidesData: [],
+  allResults: [],
+  currentFilter: "all",
+  lightboxImages: [],
+  lightboxIndex: 0,
+  settings: {
+    darkMode: true,
+    autoExpand: false,
+    showConfidence: true
+  }
+};
+
+// Load settings from localStorage
+function loadSettings() {
+  const saved = localStorage.getItem("histopath_settings");
+  if (saved) {
+    Object.assign(state.settings, JSON.parse(saved));
+  }
+  applySettings();
+}
+
+function saveSettings() {
+  localStorage.setItem("histopath_settings", JSON.stringify(state.settings));
+}
+
+function applySettings() {
+  document.documentElement.setAttribute("data-theme", state.settings.darkMode ? "dark" : "light");
+  elements.darkModeToggle.checked = state.settings.darkMode;
+  elements.autoExpandToggle.checked = state.settings.autoExpand;
+  elements.showConfidenceToggle.checked = state.settings.showConfidence;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════
+
+function showToast(message, type = "info", duration = 3000) {
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  
+  const icons = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>',
+    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+  };
+  
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type]}</div>
+    <span class="toast-message">${message}</span>
+  `;
+  
+  elements.toastContainer.appendChild(toast);
+  
+  // Trigger animation
+  requestAnimationFrame(() => toast.classList.add("show"));
+  
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+
+document.querySelectorAll(".nav-item").forEach(item => {
+  item.addEventListener("click", (e) => {
+    e.preventDefault();
+    const page = item.dataset.page;
+    
+    document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+    item.classList.add("active");
+    
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(`${page}Page`).classList.add("active");
+    
+    if (page === "history") loadHistory();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════════════════════════
+
+elements.themeToggle.addEventListener("click", () => {
+  state.settings.darkMode = !state.settings.darkMode;
+  applySettings();
+  saveSettings();
+});
+
+elements.darkModeToggle.addEventListener("change", (e) => {
+  state.settings.darkMode = e.target.checked;
+  applySettings();
+  saveSettings();
+});
+
+elements.autoExpandToggle?.addEventListener("change", (e) => {
+  state.settings.autoExpand = e.target.checked;
+  saveSettings();
+});
+
+elements.showConfidenceToggle?.addEventListener("change", (e) => {
+  state.settings.showConfidence = e.target.checked;
+  saveSettings();
+});
+
+// ═══════════════════════════════════════════════════════════
+// PATIENT INFO TOGGLE
+// ═══════════════════════════════════════════════════════════
+
+elements.patientInfoToggle.addEventListener("click", () => {
+  elements.patientInfoForm.classList.toggle("active");
+  elements.patientInfoToggle.classList.toggle("active");
+});
 
 // ═══════════════════════════════════════════════════════════
 // UPLOAD MODE TOGGLE
 // ═══════════════════════════════════════════════════════════
 
-filesModeBtn.addEventListener("click", () => switchMode("files"));
-folderModeBtn.addEventListener("click", () => switchMode("folder"));
+elements.filesModeBtn.addEventListener("click", () => switchMode("files"));
+elements.folderModeBtn.addEventListener("click", () => switchMode("folder"));
 
 function switchMode(mode) {
-  uploadMode = mode;
+  state.uploadMode = mode;
   
-  // Update button states
-  filesModeBtn.classList.toggle("active", mode === "files");
-  folderModeBtn.classList.toggle("active", mode === "folder");
+  elements.filesModeBtn.classList.toggle("active", mode === "files");
+  elements.folderModeBtn.classList.toggle("active", mode === "folder");
   
-  // Update dropzone UI
   if (mode === "folder") {
-    dropzoneText.textContent = "Drag & drop a slide folder";
-    dropzoneSubtext.textContent = "or click to browse folders";
-    dropzoneIcon.innerHTML = `
+    elements.dropzoneText.textContent = "Drag & drop a slide folder";
+    elements.dropzoneSubtext.textContent = "or click to browse folders";
+    elements.dropzoneIcon.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
       </svg>
     `;
-    slideIdRow.style.display = "none";
-    previewSection.classList.remove("active");
-    slidesQueue.classList.toggle("active", slidesData.length > 0);
+    elements.slideIdRow.style.display = "none";
+    elements.previewSection.classList.remove("active");
+    elements.slidesQueue.classList.toggle("active", state.slidesData.length > 0);
   } else {
-    dropzoneText.textContent = "Drag & drop histopathology images";
-    dropzoneSubtext.textContent = "or click to browse files";
-    dropzoneIcon.innerHTML = `
+    elements.dropzoneText.textContent = "Drag & drop histopathology images";
+    elements.dropzoneSubtext.textContent = "or click to browse files";
+    elements.dropzoneIcon.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="17,8 12,3 7,8"/>
         <line x1="12" y1="3" x2="12" y2="15"/>
       </svg>
     `;
-    slideIdRow.style.display = "block";
-    slidesQueue.classList.remove("active");
-    previewSection.classList.toggle("active", selectedFiles.length > 0);
+    elements.slideIdRow.style.display = "block";
+    elements.slidesQueue.classList.remove("active");
+    elements.previewSection.classList.toggle("active", state.selectedFiles.length > 0);
   }
   
   updateSubmitButton();
 }
 
 // ═══════════════════════════════════════════════════════════
-// DROPZONE FUNCTIONALITY
+// DROPZONE
 // ═══════════════════════════════════════════════════════════
 
-dropzone.addEventListener("click", () => {
-  if (uploadMode === "folder") {
-    folderInput.click();
+elements.dropzone.addEventListener("click", () => {
+  if (state.uploadMode === "folder") {
+    elements.folderInput.click();
   } else {
-    fileInput.click();
+    elements.fileInput.click();
   }
 });
 
-dropzone.addEventListener("dragover", (e) => {
+elements.dropzone.addEventListener("dragover", (e) => {
   e.preventDefault();
-  dropzone.classList.add("dragover");
+  elements.dropzone.classList.add("dragover");
 });
 
-dropzone.addEventListener("dragleave", () => {
-  dropzone.classList.remove("dragover");
+elements.dropzone.addEventListener("dragleave", () => {
+  elements.dropzone.classList.remove("dragover");
 });
 
-dropzone.addEventListener("drop", (e) => {
+elements.dropzone.addEventListener("drop", (e) => {
   e.preventDefault();
-  dropzone.classList.remove("dragover");
+  elements.dropzone.classList.remove("dragover");
   
-  const items = e.dataTransfer.items;
-  
-  if (uploadMode === "folder") {
-    // Handle folder drop
-    handleFolderDrop(items);
+  if (state.uploadMode === "folder") {
+    handleFolderDrop(e.dataTransfer.items);
   } else {
-    // Handle files drop
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
     addFiles(files);
   }
 });
 
-// File input change
-fileInput.addEventListener("change", (e) => {
-  const files = Array.from(e.target.files);
-  addFiles(files);
+elements.fileInput.addEventListener("change", (e) => {
+  addFiles(Array.from(e.target.files));
 });
 
-// Folder input change
-folderInput.addEventListener("change", (e) => {
+elements.folderInput.addEventListener("change", (e) => {
   const files = Array.from(e.target.files).filter(f => f.type.startsWith("image/"));
   if (files.length > 0) {
-    // Extract folder name from the path
-    const firstFile = files[0];
-    const pathParts = firstFile.webkitRelativePath.split("/");
-    const folderName = pathParts[0];
-    
+    const folderName = files[0].webkitRelativePath.split("/")[0];
     addSlide(folderName, files);
   }
 });
 
-// Handle folder drop with DataTransferItemList
 async function handleFolderDrop(items) {
   const folders = new Map();
   
   for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.kind === "file") {
-      const entry = item.webkitGetAsEntry();
-      if (entry) {
-        await traverseFileTree(entry, "", folders);
-      }
+    const entry = items[i].webkitGetAsEntry();
+    if (entry) {
+      await traverseFileTree(entry, "", folders);
     }
   }
   
-  // Add each folder as a slide
-  folders.forEach((files, folderName) => {
-    if (files.length > 0) {
-      addSlide(folderName, files);
-    }
+  folders.forEach((files, name) => {
+    if (files.length > 0) addSlide(name, files);
   });
 }
 
-// Recursively traverse folder structure
 async function traverseFileTree(entry, path, folders) {
   return new Promise((resolve) => {
     if (entry.isFile) {
       entry.file((file) => {
         if (file.type.startsWith("image/")) {
           const folderName = path.split("/")[0] || entry.name;
-          if (!folders.has(folderName)) {
-            folders.set(folderName, []);
-          }
+          if (!folders.has(folderName)) folders.set(folderName, []);
           folders.get(folderName).push(file);
         }
         resolve();
@@ -183,8 +330,8 @@ async function traverseFileTree(entry, path, folders) {
       const reader = entry.createReader();
       reader.readEntries(async (entries) => {
         const newPath = path ? `${path}/${entry.name}` : entry.name;
-        for (const subEntry of entries) {
-          await traverseFileTree(subEntry, newPath, folders);
+        for (const sub of entries) {
+          await traverseFileTree(sub, newPath, folders);
         }
         resolve();
       });
@@ -195,81 +342,97 @@ async function traverseFileTree(entry, path, folders) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// FILE HANDLING (Individual Files Mode)
+// FILE HANDLING
 // ═══════════════════════════════════════════════════════════
 
 function addFiles(files) {
-  selectedFiles = [...selectedFiles, ...files];
+  state.selectedFiles = [...state.selectedFiles, ...files];
   updatePreview();
   updateSubmitButton();
+  showToast(`Added ${files.length} image${files.length !== 1 ? 's' : ''}`, "success");
 }
 
 function removeFile(index) {
-  selectedFiles.splice(index, 1);
+  state.selectedFiles.splice(index, 1);
   updatePreview();
   updateSubmitButton();
 }
 
 function updatePreview() {
-  if (selectedFiles.length === 0) {
-    previewSection.classList.remove("active");
+  if (state.selectedFiles.length === 0) {
+    elements.previewSection.classList.remove("active");
     return;
   }
 
-  previewSection.classList.add("active");
-  previewGrid.innerHTML = "";
+  elements.previewSection.classList.add("active");
+  elements.previewCount.textContent = state.selectedFiles.length;
+  elements.previewGrid.innerHTML = "";
 
-  selectedFiles.forEach((file, index) => {
+  state.selectedFiles.forEach((file, index) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const item = document.createElement("div");
       item.className = "preview-item";
       item.innerHTML = `
-        <img src="${e.target.result}" alt="${file.name}">
+        <img src="${e.target.result}" alt="${file.name}" data-index="${index}">
+        <div class="preview-overlay">
+          <span class="preview-name">${file.name.length > 15 ? file.name.slice(0, 12) + '...' : file.name}</span>
+        </div>
         <button type="button" class="remove-btn" data-index="${index}">×</button>
       `;
-      previewGrid.appendChild(item);
-      item.querySelector(".remove-btn").addEventListener("click", () => removeFile(index));
+      elements.previewGrid.appendChild(item);
+      
+      item.querySelector(".remove-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeFile(index);
+      });
+      
+      item.querySelector("img").addEventListener("click", () => {
+        openLightbox(index, state.selectedFiles.map((f, i) => ({
+          src: URL.createObjectURL(f),
+          name: f.name,
+          prediction: null
+        })));
+      });
     };
     reader.readAsDataURL(file);
   });
 }
 
-clearBtn.addEventListener("click", () => {
-  selectedFiles = [];
-  fileInput.value = "";
+elements.clearBtn.addEventListener("click", () => {
+  state.selectedFiles = [];
+  elements.fileInput.value = "";
   updatePreview();
   updateSubmitButton();
+  showToast("Cleared all images", "info");
 });
 
 // ═══════════════════════════════════════════════════════════
-// SLIDE QUEUE HANDLING (Folder Mode)
+// SLIDE QUEUE
 // ═══════════════════════════════════════════════════════════
 
 function addSlide(slideId, files) {
-  // Check if slide already exists
-  const existingIndex = slidesData.findIndex(s => s.slideId === slideId);
-  if (existingIndex !== -1) {
-    // Add files to existing slide
-    slidesData[existingIndex].files = [...slidesData[existingIndex].files, ...files];
+  const existing = state.slidesData.findIndex(s => s.slideId === slideId);
+  if (existing !== -1) {
+    state.slidesData[existing].files = [...state.slidesData[existing].files, ...files];
   } else {
-    slidesData.push({ slideId, files });
+    state.slidesData.push({ slideId, files });
   }
-  
   updateQueueUI();
   updateSubmitButton();
+  showToast(`Added slide: ${slideId} (${files.length} patches)`, "success");
 }
 
 function removeSlide(index) {
-  slidesData.splice(index, 1);
+  state.slidesData.splice(index, 1);
   updateQueueUI();
   updateSubmitButton();
 }
 
 function updateQueueUI() {
-  slidesQueue.classList.toggle("active", slidesData.length > 0);
+  elements.slidesQueue.classList.toggle("active", state.slidesData.length > 0);
   
-  queueList.innerHTML = slidesData.map((slide, index) => `
+  elements.queueList.innerHTML = state.slidesData.map((slide, index) => `
     <div class="queue-item">
       <div class="queue-item-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -289,36 +452,32 @@ function updateQueueUI() {
     </div>
   `).join("");
   
-  // Add remove listeners
-  queueList.querySelectorAll(".queue-item-remove").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const index = parseInt(btn.dataset.index);
-      removeSlide(index);
-    });
+  elements.queueList.querySelectorAll(".queue-item-remove").forEach(btn => {
+    btn.addEventListener("click", () => removeSlide(parseInt(btn.dataset.index)));
   });
   
-  // Update summary
-  const totalPatches = slidesData.reduce((sum, s) => sum + s.files.length, 0);
-  totalSlidesEl.textContent = `${slidesData.length} slide${slidesData.length !== 1 ? "s" : ""}`;
-  totalPatchesEl.textContent = `${totalPatches} patch${totalPatches !== 1 ? "es" : ""}`;
+  const totalPatches = state.slidesData.reduce((sum, s) => sum + s.files.length, 0);
+  elements.totalSlides.textContent = `${state.slidesData.length} slide${state.slidesData.length !== 1 ? 's' : ''}`;
+  elements.totalPatches.textContent = `${totalPatches} patch${totalPatches !== 1 ? 'es' : ''}`;
 }
 
-clearQueueBtn.addEventListener("click", () => {
-  slidesData = [];
-  folderInput.value = "";
+elements.clearQueueBtn.addEventListener("click", () => {
+  state.slidesData = [];
+  elements.folderInput.value = "";
   updateQueueUI();
   updateSubmitButton();
+  showToast("Cleared all slides", "info");
 });
 
 function updateSubmitButton() {
-  if (uploadMode === "folder") {
-    const totalPatches = slidesData.reduce((sum, s) => sum + s.files.length, 0);
-    submitBtnText.textContent = slidesData.length > 0 
-      ? `Analyze ${slidesData.length} Slide${slidesData.length !== 1 ? "s" : ""} (${totalPatches} patches)`
+  if (state.uploadMode === "folder") {
+    const total = state.slidesData.reduce((sum, s) => sum + s.files.length, 0);
+    elements.submitBtnText.textContent = state.slidesData.length > 0 
+      ? `Analyze ${state.slidesData.length} Slide${state.slidesData.length !== 1 ? 's' : ''} (${total} patches)`
       : "Run Analysis";
   } else {
-    submitBtnText.textContent = selectedFiles.length > 0 
-      ? `Analyze ${selectedFiles.length} Image${selectedFiles.length !== 1 ? "s" : ""}`
+    elements.submitBtnText.textContent = state.selectedFiles.length > 0 
+      ? `Analyze ${state.selectedFiles.length} Image${state.selectedFiles.length !== 1 ? 's' : ''}`
       : "Run Analysis";
   }
 }
@@ -327,10 +486,10 @@ function updateSubmitButton() {
 // FORM SUBMISSION
 // ═══════════════════════════════════════════════════════════
 
-form.addEventListener("submit", async (e) => {
+elements.form.addEventListener("submit", async (e) => {
   e.preventDefault();
   
-  if (uploadMode === "folder") {
+  if (state.uploadMode === "folder") {
     await analyzeSlides();
   } else {
     await analyzeFiles();
@@ -338,69 +497,63 @@ form.addEventListener("submit", async (e) => {
 });
 
 async function analyzeFiles() {
-  if (selectedFiles.length === 0) {
-    showError("Please select at least one image to analyze.");
+  if (state.selectedFiles.length === 0) {
+    showToast("Please select at least one image", "warning");
     return;
   }
 
-  const slideId = document.getElementById("slideId").value || "Unnamed Slide";
+  const slideId = elements.slideIdInput.value || "Unnamed Slide";
   
-  showLoading("Analyzing tissue samples...", "");
-  simulateProgress();
+  showLoading("Analyzing tissue samples...", "Preparing images...");
 
   const formData = new FormData();
-  selectedFiles.forEach(file => formData.append("files", file));
+  state.selectedFiles.forEach(file => formData.append("files", file));
   formData.append("slide_id", slideId);
 
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: formData
-    });
-
+    const response = await fetch(API_URL, { method: "POST", body: formData });
     if (!response.ok) throw new Error("Server error");
 
     const data = await response.json();
     hideLoading();
-    allResults = [data];
+    state.allResults = [data];
     displayResults([data]);
+    saveToHistory(data);
+    showToast("Analysis complete!", "success");
   } catch (err) {
     hideLoading();
-    showError(`Analysis failed: ${err.message}`);
+    showToast(`Analysis failed: ${err.message}`, "error");
   }
 }
 
 async function analyzeSlides() {
-  if (slidesData.length === 0) {
-    showError("Please add at least one slide folder to analyze.");
+  if (state.slidesData.length === 0) {
+    showToast("Please add at least one slide folder", "warning");
     return;
   }
 
-  showLoading("Preparing batch analysis...", `0 / ${slidesData.length} slides`);
+  showLoading("Batch analysis...", `0 / ${state.slidesData.length} slides`);
   
-  allResults = [];
+  state.allResults = [];
   let completed = 0;
   
-  for (const slide of slidesData) {
-    loadingSubtext.textContent = `Processing: ${slide.slideId}`;
-    loadingBar.style.width = `${(completed / slidesData.length) * 100}%`;
+  for (const slide of state.slidesData) {
+    elements.loadingSubtext.textContent = `Processing: ${slide.slideId}`;
+    elements.loadingBar.style.width = `${(completed / state.slidesData.length) * 100}%`;
     
     const formData = new FormData();
     slide.files.forEach(file => formData.append("files", file));
     formData.append("slide_id", slide.slideId);
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        body: formData
-      });
-
-      if (!response.ok) throw new Error(`Failed to analyze ${slide.slideId}`);
-
+      const response = await fetch(API_URL, { method: "POST", body: formData });
+      if (!response.ok) throw new Error(`Failed: ${slide.slideId}`);
+      
       const data = await response.json();
-      allResults.push(data);
+      state.allResults.push(data);
+      saveToHistory(data);
     } catch (err) {
-      allResults.push({
+      state.allResults.push({
         slide_id: slide.slideId,
         error: err.message,
         num_patches: slide.files.length,
@@ -409,11 +562,12 @@ async function analyzeSlides() {
     }
     
     completed++;
-    loadingBar.style.width = `${(completed / slidesData.length) * 100}%`;
+    elements.loadingBar.style.width = `${(completed / state.slidesData.length) * 100}%`;
   }
   
   hideLoading();
-  displayResults(allResults);
+  displayResults(state.allResults);
+  showToast(`Completed analysis of ${state.slidesData.length} slides`, "success");
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -421,67 +575,109 @@ async function analyzeSlides() {
 // ═══════════════════════════════════════════════════════════
 
 function displayResults(resultsArray) {
-  if (resultsArray.length === 0) {
-    showError("No results to display.");
-    return;
-  }
+  if (resultsArray.length === 0) return;
   
-  // Calculate totals
-  let totalPatches = 0;
-  let totalBenign = 0;
-  let totalMalignant = 0;
+  let totalPatches = 0, totalBenign = 0, totalMalignant = 0, totalConfidence = 0;
   
   resultsArray.forEach(data => {
-    const predictions = data.patch_predictions || [];
-    totalPatches += predictions.length;
-    totalBenign += predictions.filter(p => p.prediction === "benign").length;
-    totalMalignant += predictions.filter(p => p.prediction === "malignant").length;
+    const preds = data.patch_predictions || [];
+    totalPatches += preds.length;
+    totalBenign += preds.filter(p => p.prediction === "benign").length;
+    totalMalignant += preds.filter(p => p.prediction === "malignant").length;
+    totalConfidence += preds.reduce((sum, p) => sum + (p.confidence || 0), 0);
   });
   
   const malignantPercent = totalPatches > 0 ? ((totalMalignant / totalPatches) * 100).toFixed(1) : 0;
+  const avgConfidence = totalPatches > 0 ? (totalConfidence / totalPatches).toFixed(1) : 0;
+  const riskLevel = malignantPercent > 50 ? 'high' : malignantPercent > 20 ? 'medium' : 'low';
   
-  // Build HTML
+  // Get patient info
+  const patientId = document.getElementById("patientId")?.value || "";
+  const patientName = document.getElementById("patientName")?.value || "";
+  
   let html = `
     <div class="results-overview">
-      <h3>Analysis Summary</h3>
-      <div class="overview-stats">
-        <div class="overview-stat">
-          <div class="stat-value total">${resultsArray.length}</div>
-          <div class="stat-label">Slides</div>
+      <div class="overview-header">
+        <h3>Analysis Summary</h3>
+        <span class="analysis-time">${new Date().toLocaleString()}</span>
+      </div>
+      
+      ${patientId || patientName ? `
+        <div class="patient-summary">
+          ${patientId ? `<span><strong>ID:</strong> ${patientId}</span>` : ''}
+          ${patientName ? `<span><strong>Patient:</strong> ${patientName}</span>` : ''}
         </div>
-        <div class="overview-stat">
-          <div class="stat-value">${totalPatches}</div>
-          <div class="stat-label">Patches</div>
+      ` : ''}
+      
+      <div class="overview-grid">
+        <div class="donut-chart-container">
+          <svg class="donut-chart" viewBox="0 0 100 100">
+            <circle class="donut-ring" cx="50" cy="50" r="40"/>
+            <circle class="donut-segment benign" cx="50" cy="50" r="40"
+              stroke-dasharray="${(totalBenign / totalPatches) * 251.2} 251.2"
+              stroke-dashoffset="0"/>
+            <circle class="donut-segment malignant" cx="50" cy="50" r="40"
+              stroke-dasharray="${(totalMalignant / totalPatches) * 251.2} 251.2"
+              stroke-dashoffset="${-(totalBenign / totalPatches) * 251.2}"/>
+          </svg>
+          <div class="donut-center">
+            <span class="donut-value">${totalPatches}</span>
+            <span class="donut-label">Patches</span>
+          </div>
         </div>
-        <div class="overview-stat">
-          <div class="stat-value benign">${totalBenign}</div>
-          <div class="stat-label">Benign</div>
-        </div>
-        <div class="overview-stat">
-          <div class="stat-value malignant">${totalMalignant}</div>
-          <div class="stat-label">Malignant</div>
+        
+        <div class="overview-stats">
+          <div class="stat-row">
+            <div class="stat-item">
+              <span class="stat-value total">${resultsArray.length}</span>
+              <span class="stat-label">Slides</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">${avgConfidence}%</span>
+              <span class="stat-label">Avg Confidence</span>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-item benign">
+              <span class="stat-value">${totalBenign}</span>
+              <span class="stat-label">Benign</span>
+            </div>
+            <div class="stat-item malignant">
+              <span class="stat-value">${totalMalignant}</span>
+              <span class="stat-label">Malignant</span>
+            </div>
+          </div>
         </div>
       </div>
       
-      <div class="risk-indicator ${malignantPercent > 50 ? 'high' : malignantPercent > 20 ? 'medium' : 'low'}">
+      <div class="risk-indicator ${riskLevel}">
+        <div class="risk-header">
+          <span class="risk-title">Malignancy Detection Rate</span>
+          <span class="risk-value">${malignantPercent}%</span>
+        </div>
         <div class="risk-bar">
           <div class="risk-fill" style="width: ${malignantPercent}%"></div>
         </div>
-        <span class="risk-label">${malignantPercent}% Malignant Detection Rate</span>
+        <span class="risk-label">${riskLevel === 'high' ? '⚠️ High Risk - Recommend Further Review' : riskLevel === 'medium' ? '⚡ Moderate Risk' : '✓ Low Risk'}</span>
       </div>
     </div>
     
-    <div class="slides-results">
+    <div class="results-search">
+      <input type="text" id="resultsSearch" placeholder="Search by filename..." class="search-input">
+    </div>
+    
+    <div class="slides-results" id="slidesResults">
   `;
   
   resultsArray.forEach((data, index) => {
-    const predictions = data.patch_predictions || [];
-    const benign = predictions.filter(p => p.prediction === "benign").length;
-    const malignant = predictions.filter(p => p.prediction === "malignant").length;
-    const slidePercent = predictions.length > 0 ? ((malignant / predictions.length) * 100).toFixed(1) : 0;
+    const preds = data.patch_predictions || [];
+    const benign = preds.filter(p => p.prediction === "benign").length;
+    const malignant = preds.filter(p => p.prediction === "malignant").length;
+    const slidePercent = preds.length > 0 ? ((malignant / preds.length) * 100).toFixed(1) : 0;
+    const slideAvgConf = preds.length > 0 ? (preds.reduce((s, p) => s + (p.confidence || 0), 0) / preds.length).toFixed(1) : 0;
     
     html += `
-      <div class="slide-result ${data.error ? 'error' : ''}" data-index="${index}">
+      <div class="slide-result ${state.settings.autoExpand ? 'expanded' : ''}" data-index="${index}">
         <div class="slide-result-header" onclick="toggleSlideDetails(${index})">
           <div class="slide-info">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="folder-icon">
@@ -489,7 +685,7 @@ function displayResults(resultsArray) {
             </svg>
             <div>
               <div class="slide-name">${data.slide_id}</div>
-              <div class="slide-meta">${data.num_patches} patches • ${slidePercent}% malignant</div>
+              <div class="slide-meta">${preds.length} patches • ${slidePercent}% malignant • ${slideAvgConf}% avg confidence</div>
             </div>
           </div>
           <div class="slide-badges">
@@ -501,14 +697,20 @@ function displayResults(resultsArray) {
           </div>
         </div>
         <div class="slide-details" id="slideDetails${index}">
-          <div class="predictions-list">
-            ${predictions.map(p => `
-              <div class="prediction-card ${p.prediction}">
-                <div class="prediction-icon">${p.prediction === "benign" ? "✓" : "⚠"}</div>
-                <div class="prediction-info">
-                  <div class="prediction-filename">${p.filename}</div>
-                  <div class="prediction-result">${p.prediction}</div>
+          <div class="predictions-grid">
+            ${preds.map((p, pIdx) => `
+              <div class="prediction-card ${p.prediction}" data-prediction="${p.prediction}" data-filename="${p.filename.toLowerCase()}">
+                <div class="prediction-header">
+                  <span class="prediction-icon">${p.prediction === "benign" ? "✓" : "⚠"}</span>
+                  <span class="prediction-badge ${p.prediction}">${p.prediction}</span>
                 </div>
+                <div class="prediction-filename" title="${p.filename}">${p.filename.length > 20 ? p.filename.slice(0, 17) + '...' : p.filename}</div>
+                ${state.settings.showConfidence ? `
+                  <div class="confidence-bar">
+                    <div class="confidence-fill ${p.prediction}" style="width: ${p.confidence || 0}%"></div>
+                  </div>
+                  <span class="confidence-value">${p.confidence || 0}% confidence</span>
+                ` : ''}
               </div>
             `).join("")}
           </div>
@@ -519,69 +721,275 @@ function displayResults(resultsArray) {
   
   html += `</div>`;
   
-  resultsContainer.innerHTML = html;
+  elements.resultsContainer.innerHTML = html;
+  elements.resultsActions.style.display = "flex";
   
-  // Show export button
-  exportBtn.style.display = "flex";
+  // Search functionality
+  document.getElementById("resultsSearch")?.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase();
+    document.querySelectorAll(".prediction-card").forEach(card => {
+      const filename = card.dataset.filename;
+      card.style.display = filename.includes(query) ? "" : "none";
+    });
+  });
+  
+  // Setup filter buttons
+  setupFilters();
   
   // Animate
-  const slideResults = resultsContainer.querySelectorAll(".slide-result");
-  slideResults.forEach((card, i) => {
+  animateResults();
+}
+
+function setupFilters() {
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      
+      const filter = btn.dataset.filter;
+      document.querySelectorAll(".prediction-card").forEach(card => {
+        if (filter === "all") {
+          card.style.display = "";
+        } else {
+          card.style.display = card.dataset.prediction === filter ? "" : "none";
+        }
+      });
+    });
+  });
+}
+
+function animateResults() {
+  document.querySelectorAll(".slide-result").forEach((card, i) => {
     card.style.opacity = "0";
-    card.style.transform = "translateY(10px)";
+    card.style.transform = "translateY(20px)";
     setTimeout(() => {
-      card.style.transition = "all 0.3s ease";
+      card.style.transition = "all 0.4s ease";
       card.style.opacity = "1";
       card.style.transform = "translateY(0)";
     }, i * 100);
   });
 }
 
-// Toggle slide details
 window.toggleSlideDetails = function(index) {
-  const details = document.getElementById(`slideDetails${index}`);
-  const parent = details.parentElement;
+  const parent = document.querySelector(`.slide-result[data-index="${index}"]`);
   parent.classList.toggle("expanded");
 };
 
-function showError(message) {
-  resultsContainer.innerHTML = `
-    <div class="empty-state" style="color: var(--danger);">
-      <div class="empty-icon" style="background: var(--danger-bg);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--danger);">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="15" y1="9" x2="9" y2="15"/>
-          <line x1="9" y1="9" x2="15" y2="15"/>
-        </svg>
+// ═══════════════════════════════════════════════════════════
+// LIGHTBOX
+// ═══════════════════════════════════════════════════════════
+
+function openLightbox(index, images) {
+  state.lightboxImages = images;
+  state.lightboxIndex = index;
+  updateLightbox();
+  elements.lightbox.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function updateLightbox() {
+  const img = state.lightboxImages[state.lightboxIndex];
+  elements.lightboxImage.src = img.src;
+  elements.lightboxInfo.innerHTML = `
+    <span class="lightbox-filename">${img.name}</span>
+    ${img.prediction ? `<span class="lightbox-prediction ${img.prediction}">${img.prediction}</span>` : ''}
+  `;
+}
+
+elements.lightboxClose.addEventListener("click", () => {
+  elements.lightbox.classList.remove("active");
+  document.body.style.overflow = "";
+});
+
+elements.lightboxPrev.addEventListener("click", () => {
+  state.lightboxIndex = (state.lightboxIndex - 1 + state.lightboxImages.length) % state.lightboxImages.length;
+  updateLightbox();
+});
+
+elements.lightboxNext.addEventListener("click", () => {
+  state.lightboxIndex = (state.lightboxIndex + 1) % state.lightboxImages.length;
+  updateLightbox();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (!elements.lightbox.classList.contains("active")) return;
+  if (e.key === "Escape") elements.lightboxClose.click();
+  if (e.key === "ArrowLeft") elements.lightboxPrev.click();
+  if (e.key === "ArrowRight") elements.lightboxNext.click();
+});
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+elements.exportCsvBtn.addEventListener("click", exportCSV);
+elements.exportPdfBtn.addEventListener("click", exportReport);
+
+function exportCSV() {
+  if (state.allResults.length === 0) return;
+  
+  let csv = "Slide ID,Filename,Prediction,Confidence\n";
+  state.allResults.forEach(slide => {
+    (slide.patch_predictions || []).forEach(p => {
+      csv += `"${slide.slide_id}","${p.filename}","${p.prediction}","${p.confidence || ''}"\n`;
+    });
+  });
+  
+  downloadFile(csv, `histopath_results_${Date.now()}.csv`, "text/csv");
+  showToast("CSV exported successfully", "success");
+}
+
+function exportReport() {
+  if (state.allResults.length === 0) return;
+  
+  const patientId = document.getElementById("patientId")?.value || "N/A";
+  const patientName = document.getElementById("patientName")?.value || "N/A";
+  const patientAge = document.getElementById("patientAge")?.value || "N/A";
+  const clinician = document.getElementById("clinician")?.value || "N/A";
+  const notes = document.getElementById("clinicalNotes")?.value || "";
+  
+  let totalPatches = 0, totalBenign = 0, totalMalignant = 0;
+  state.allResults.forEach(r => {
+    const preds = r.patch_predictions || [];
+    totalPatches += preds.length;
+    totalBenign += preds.filter(p => p.prediction === "benign").length;
+    totalMalignant += preds.filter(p => p.prediction === "malignant").length;
+  });
+  
+  const report = `
+HISTOPATH AI - ANALYSIS REPORT
+================================
+Generated: ${new Date().toLocaleString()}
+
+PATIENT INFORMATION
+-------------------
+Patient ID: ${patientId}
+Patient Name: ${patientName}
+Age: ${patientAge}
+Clinician: ${clinician}
+
+ANALYSIS SUMMARY
+----------------
+Total Slides: ${state.allResults.length}
+Total Patches: ${totalPatches}
+Benign: ${totalBenign} (${((totalBenign/totalPatches)*100).toFixed(1)}%)
+Malignant: ${totalMalignant} (${((totalMalignant/totalPatches)*100).toFixed(1)}%)
+
+DETAILED RESULTS
+----------------
+${state.allResults.map(slide => {
+  const preds = slide.patch_predictions || [];
+  return `
+Slide: ${slide.slide_id}
+  Patches: ${preds.length}
+  Benign: ${preds.filter(p => p.prediction === "benign").length}
+  Malignant: ${preds.filter(p => p.prediction === "malignant").length}
+  
+  Predictions:
+${preds.map(p => `    - ${p.filename}: ${p.prediction.toUpperCase()} (${p.confidence || 0}%)`).join('\n')}
+`;
+}).join('\n')}
+
+CLINICAL NOTES
+--------------
+${notes || "No additional notes."}
+
+================================
+This report is generated by HistoPath AI.
+For clinical use, please consult with a qualified pathologist.
+`;
+  
+  downloadFile(report, `histopath_report_${Date.now()}.txt`, "text/plain");
+  showToast("Report generated successfully", "success");
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════════════════
+
+function saveToHistory(data) {
+  const history = JSON.parse(localStorage.getItem("histopath_history") || "[]");
+  history.unshift({
+    ...data,
+    timestamp: Date.now(),
+    patientId: document.getElementById("patientId")?.value || ""
+  });
+  // Keep only last 20
+  localStorage.setItem("histopath_history", JSON.stringify(history.slice(0, 20)));
+  updateHistoryBadge();
+}
+
+function loadHistory() {
+  const history = JSON.parse(localStorage.getItem("histopath_history") || "[]");
+  
+  if (history.length === 0) {
+    elements.historyContainer.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12,6 12,12 16,14"/>
+          </svg>
+        </div>
+        <p>No analysis history yet</p>
+        <span>Your completed analyses will appear here</span>
       </div>
-      <p>${message}</p>
+    `;
+    return;
+  }
+  
+  elements.historyContainer.innerHTML = `
+    <div class="history-list">
+      ${history.map((item, idx) => {
+        const preds = item.patch_predictions || [];
+        const benign = preds.filter(p => p.prediction === "benign").length;
+        const malignant = preds.filter(p => p.prediction === "malignant").length;
+        return `
+          <div class="history-item" data-index="${idx}">
+            <div class="history-icon ${malignant > benign ? 'danger' : 'success'}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <div class="history-info">
+              <div class="history-title">${item.slide_id}</div>
+              <div class="history-meta">
+                ${item.patientId ? `Patient: ${item.patientId} • ` : ''}
+                ${new Date(item.timestamp).toLocaleDateString()}
+              </div>
+            </div>
+            <div class="history-stats">
+              <span class="badge benign">${benign} B</span>
+              <span class="badge malignant">${malignant} M</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
     </div>
   `;
 }
 
-// ═══════════════════════════════════════════════════════════
-// EXPORT FUNCTIONALITY
-// ═══════════════════════════════════════════════════════════
+function updateHistoryBadge() {
+  const history = JSON.parse(localStorage.getItem("histopath_history") || "[]");
+  elements.historyBadge.textContent = history.length;
+  elements.historyBadge.style.display = history.length > 0 ? "" : "none";
+}
 
-exportBtn.addEventListener("click", () => {
-  if (allResults.length === 0) return;
-  
-  // Create CSV
-  let csv = "Slide ID,Filename,Prediction\n";
-  allResults.forEach(slide => {
-    (slide.patch_predictions || []).forEach(p => {
-      csv += `"${slide.slide_id}","${p.filename}","${p.prediction}"\n`;
-    });
-  });
-  
-  // Download
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `histopath_results_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+elements.clearHistoryBtn?.addEventListener("click", () => {
+  localStorage.removeItem("histopath_history");
+  loadHistory();
+  updateHistoryBadge();
+  showToast("History cleared", "info");
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -589,57 +997,46 @@ exportBtn.addEventListener("click", () => {
 // ═══════════════════════════════════════════════════════════
 
 function showLoading(text, subtext) {
-  loadingOverlay.classList.add("active");
-  loadingText.textContent = text;
-  loadingSubtext.textContent = subtext;
-  loadingBar.style.width = "0%";
-  submitBtn.disabled = true;
+  elements.loadingOverlay.classList.add("active");
+  elements.loadingText.textContent = text;
+  elements.loadingSubtext.textContent = subtext;
+  elements.loadingBar.style.width = "0%";
+  elements.submitBtn.disabled = true;
 }
 
 function hideLoading() {
-  loadingBar.style.width = "100%";
+  elements.loadingBar.style.width = "100%";
   setTimeout(() => {
-    loadingOverlay.classList.remove("active");
-    submitBtn.disabled = false;
+    elements.loadingOverlay.classList.remove("active");
+    elements.submitBtn.disabled = false;
   }, 300);
 }
 
-function simulateProgress() {
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress += Math.random() * 15;
-    if (progress >= 90) {
-      clearInterval(interval);
-      progress = 90;
-    }
-    loadingBar.style.width = `${progress}%`;
-  }, 200);
-}
-
 // ═══════════════════════════════════════════════════════════
-// API STATUS CHECK
+// API STATUS
 // ═══════════════════════════════════════════════════════════
 
 async function checkApiStatus() {
-  const statusEl = document.getElementById("apiStatus");
   try {
     const response = await fetch("/health");
     if (response.ok) {
-      statusEl.innerHTML = `<span class="status-dot"></span><span>API Connected</span>`;
-      statusEl.style.background = "var(--success-bg)";
-      statusEl.style.borderColor = "rgba(16, 185, 129, 0.2)";
-      statusEl.style.color = "var(--success)";
+      elements.apiStatus.innerHTML = `<span class="status-dot"></span><span>API Connected</span>`;
+      elements.apiStatus.className = "api-status success";
     } else {
       throw new Error();
     }
   } catch {
-    statusEl.innerHTML = `<span class="status-dot" style="background: var(--danger)"></span><span>API Offline</span>`;
-    statusEl.style.background = "var(--danger-bg)";
-    statusEl.style.borderColor = "rgba(239, 68, 68, 0.2)";
-    statusEl.style.color = "var(--danger)";
+    elements.apiStatus.innerHTML = `<span class="status-dot"></span><span>API Offline</span>`;
+    elements.apiStatus.className = "api-status error";
   }
 }
 
-// Initialize
+// ═══════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════
+
+loadSettings();
 checkApiStatus();
 updateSubmitButton();
+updateHistoryBadge();
+

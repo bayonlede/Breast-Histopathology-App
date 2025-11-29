@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,28 +25,25 @@
       </div>
       
       <nav class="nav">
-        <a href="#" class="nav-item active">
+        <a href="#" class="nav-item active" data-page="analysis">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2"/>
             <path d="M9 9h6v6H9z"/>
           </svg>
           Analysis
         </a>
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" data-page="history">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 20V10"/>
-            <path d="M18 20V4"/>
-            <path d="M6 20v-4"/>
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12,6 12,12 16,14"/>
           </svg>
           History
+          <span class="nav-badge" id="historyBadge">0</span>
         </a>
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" data-page="settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
-            <path d="M12 1v6m0 6v10"/>
-            <path d="m4.22 4.22 4.24 4.24m7.08 7.08 4.24 4.24"/>
-            <path d="M1 12h6m6 0h10"/>
-            <path d="m4.22 19.78 4.24-4.24m7.08-7.08 4.24-4.24"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
           Settings
         </a>
@@ -55,149 +52,331 @@
       <div class="sidebar-footer">
         <div class="model-info">
           <span class="model-badge">ResNet-50</span>
-          <span class="model-status">● Model Ready</span>
+          <span class="model-status" id="modelStatus">● Model Ready</span>
+        </div>
+        <div class="theme-toggle">
+          <button type="button" id="themeToggle" title="Toggle theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </aside>
 
     <!-- Main Content -->
     <main class="main-content">
-      <header class="header">
-        <div class="header-left">
-          <h1>Breast Histopathology Analysis</h1>
-          <p class="header-subtitle">Upload tissue slides or folders for AI-powered cancer detection</p>
-        </div>
-        <div class="header-right">
-          <div class="api-status" id="apiStatus">
-            <span class="status-dot"></span>
-            <span>API Connected</span>
+      <!-- Analysis Page -->
+      <div class="page active" id="analysisPage">
+        <header class="header">
+          <div class="header-left">
+            <h1>Breast Histopathology Analysis</h1>
+            <p class="header-subtitle">Upload tissue slides or folders for AI-powered cancer detection</p>
           </div>
-        </div>
-      </header>
-
-      <div class="content-grid">
-        <!-- Upload Section -->
-        <section class="upload-section">
-          <div class="section-header">
-            <h2>Upload Slides</h2>
-            
-            <!-- Upload Mode Toggle -->
-            <div class="upload-mode-toggle">
-              <button type="button" class="mode-btn active" data-mode="files" id="filesModeBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21,15 16,10 5,21"/>
-                </svg>
-                Images
-              </button>
-              <button type="button" class="mode-btn" data-mode="folder" id="folderModeBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
-                Folder
-              </button>
+          <div class="header-right">
+            <div class="api-status" id="apiStatus">
+              <span class="status-dot"></span>
+              <span>Checking...</span>
             </div>
           </div>
-          
-          <form id="uploadForm">
-            <!-- Dropzone for Files -->
-            <div class="dropzone" id="dropzone">
-              <div class="dropzone-content">
-                <div class="dropzone-icon" id="dropzoneIcon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17,8 12,3 7,8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
+        </header>
+
+        <div class="content-grid">
+          <!-- Upload Section -->
+          <section class="upload-section">
+            <div class="section-header">
+              <h2>Upload Slides</h2>
+              <div class="upload-mode-toggle">
+                <button type="button" class="mode-btn active" data-mode="files" id="filesModeBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
                   </svg>
-                </div>
-                <p class="dropzone-text" id="dropzoneText">Drag & drop histopathology images</p>
-                <p class="dropzone-subtext" id="dropzoneSubtext">or click to browse files</p>
-                <span class="dropzone-formats">PNG, JPG, TIFF up to 50MB each</span>
-              </div>
-              <!-- File input for images -->
-              <input type="file" id="imageInput" name="files" multiple accept="image/*" hidden>
-              <!-- Folder input -->
-              <input type="file" id="folderInput" name="folder" webkitdirectory directory multiple accept="image/*" hidden>
-            </div>
-
-            <!-- Slide ID Input (only for file mode) -->
-            <div class="form-row" id="slideIdRow">
-              <div class="input-group">
-                <label for="slideId">Slide Identifier</label>
-                <input type="text" id="slideId" name="slide_id" placeholder="e.g., PATIENT-001-SLIDE-A">
-              </div>
-            </div>
-
-            <!-- Slides Queue (for folder mode) -->
-            <div class="slides-queue" id="slidesQueue">
-              <div class="queue-header">
-                <span class="queue-title">
+                  Images
+                </button>
+                <button type="button" class="mode-btn" data-mode="folder" id="folderModeBtn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                   </svg>
-                  Slides Queue
-                </span>
-                <button type="button" class="btn-clear-queue" id="clearQueueBtn">Clear All</button>
-              </div>
-              <div class="queue-list" id="queueList">
-                <!-- Slide cards will be added here -->
-              </div>
-              <div class="queue-summary" id="queueSummary">
-                <span id="totalSlides">0 slides</span>
-                <span id="totalPatches">0 patches</span>
+                  Folder
+                </button>
               </div>
             </div>
-
-            <!-- Preview Section (for file mode) -->
-            <div class="preview-section" id="previewSection">
-              <div class="preview-header">
-                <span class="preview-title">Selected Images</span>
-                <button type="button" class="btn-clear" id="clearBtn">Clear All</button>
+            
+            <!-- Patient Info (Collapsible) -->
+            <div class="patient-info-section">
+              <button type="button" class="patient-info-toggle" id="patientInfoToggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>Patient Information (Optional)</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6,9 12,15 18,9"/>
+                </svg>
+              </button>
+              <div class="patient-info-form" id="patientInfoForm">
+                <div class="form-grid">
+                  <div class="input-group">
+                    <label for="patientId">Patient ID</label>
+                    <input type="text" id="patientId" placeholder="e.g., P-2024-001">
+                  </div>
+                  <div class="input-group">
+                    <label for="patientName">Patient Name</label>
+                    <input type="text" id="patientName" placeholder="Full name">
+                  </div>
+                  <div class="input-group">
+                    <label for="patientAge">Age</label>
+                    <input type="number" id="patientAge" placeholder="Years">
+                  </div>
+                  <div class="input-group">
+                    <label for="clinician">Clinician</label>
+                    <input type="text" id="clinician" placeholder="Dr. Name">
+                  </div>
+                </div>
+                <div class="input-group full-width">
+                  <label for="clinicalNotes">Clinical Notes</label>
+                  <textarea id="clinicalNotes" rows="2" placeholder="Additional observations..."></textarea>
+                </div>
               </div>
-              <div class="preview-grid" id="preview"></div>
             </div>
+            
+            <form id="uploadForm">
+              <div class="dropzone" id="dropzone">
+                <div class="dropzone-content">
+                  <div class="dropzone-icon" id="dropzoneIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17,8 12,3 7,8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                  </div>
+                  <p class="dropzone-text" id="dropzoneText">Drag & drop histopathology images</p>
+                  <p class="dropzone-subtext" id="dropzoneSubtext">or click to browse files</p>
+                  <span class="dropzone-formats">PNG, JPG, TIFF up to 50MB each</span>
+                </div>
+                <input type="file" id="imageInput" name="files" multiple accept="image/*" hidden>
+                <input type="file" id="folderInput" name="folder" webkitdirectory directory multiple accept="image/*" hidden>
+              </div>
 
-            <button type="submit" class="btn-analyze" id="submitBtn">
+              <div class="form-row" id="slideIdRow">
+                <div class="input-group">
+                  <label for="slideId">Slide Identifier</label>
+                  <input type="text" id="slideId" name="slide_id" placeholder="e.g., SLIDE-001-A">
+                </div>
+              </div>
+
+              <div class="slides-queue" id="slidesQueue">
+                <div class="queue-header">
+                  <span class="queue-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Slides Queue
+                  </span>
+                  <button type="button" class="btn-clear-queue" id="clearQueueBtn">Clear All</button>
+                </div>
+                <div class="queue-list" id="queueList"></div>
+                <div class="queue-summary" id="queueSummary">
+                  <span id="totalSlides">0 slides</span>
+                  <span id="totalPatches">0 patches</span>
+                </div>
+              </div>
+
+              <div class="preview-section" id="previewSection">
+                <div class="preview-header">
+                  <span class="preview-title">Selected Images (<span id="previewCount">0</span>)</span>
+                  <button type="button" class="btn-clear" id="clearBtn">Clear All</button>
+                </div>
+                <div class="preview-grid" id="preview"></div>
+              </div>
+
+              <button type="submit" class="btn-analyze" id="submitBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+                <span id="submitBtnText">Run Analysis</span>
+              </button>
+            </form>
+          </section>
+
+          <!-- Results Section -->
+          <section class="results-section">
+            <div class="section-header">
+              <h2>Analysis Results</h2>
+              <div class="results-actions" id="resultsActions" style="display: none;">
+                <div class="filter-group">
+                  <button type="button" class="filter-btn active" data-filter="all">All</button>
+                  <button type="button" class="filter-btn" data-filter="benign">Benign</button>
+                  <button type="button" class="filter-btn" data-filter="malignant">Malignant</button>
+                </div>
+                <div class="action-buttons">
+                  <button type="button" class="btn-icon" id="exportCsvBtn" title="Export CSV">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7,10 12,15 17,10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                  <button type="button" class="btn-icon" id="exportPdfBtn" title="Generate Report">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14,2 14,8 20,8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10,9 9,9 8,9"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="results-container" id="results">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    <path d="M9 14l2 2 4-4"/>
+                  </svg>
+                </div>
+                <p>Upload images to begin analysis</p>
+                <span>AI-powered detection will identify benign and malignant tissue</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- History Page -->
+      <div class="page" id="historyPage">
+        <header class="header">
+          <div class="header-left">
+            <h1>Analysis History</h1>
+            <p class="header-subtitle">View your recent analyses</p>
+          </div>
+          <div class="header-right">
+            <button type="button" class="btn-secondary" id="clearHistoryBtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3,6 5,6 21,6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Clear History
+            </button>
+          </div>
+        </header>
+        <div class="history-container" id="historyContainer">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
+                <polyline points="12,6 12,12 16,14"/>
               </svg>
-              <span id="submitBtnText">Run Analysis</span>
-            </button>
-          </form>
-        </section>
+            </div>
+            <p>No analysis history yet</p>
+            <span>Your completed analyses will appear here</span>
+          </div>
+        </div>
+      </div>
 
-        <!-- Results Section -->
-        <section class="results-section">
-          <div class="section-header">
-            <h2>Analysis Results</h2>
-            <button type="button" class="btn-export" id="exportBtn" style="display: none;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7,10 12,15 17,10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Export
-            </button>
+      <!-- Settings Page -->
+      <div class="page" id="settingsPage">
+        <header class="header">
+          <div class="header-left">
+            <h1>Settings</h1>
+            <p class="header-subtitle">Configure your preferences</p>
+          </div>
+        </header>
+        <div class="settings-container">
+          <div class="settings-card">
+            <h3>Appearance</h3>
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">Dark Mode</span>
+                <span class="setting-desc">Use dark theme for the interface</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="darkModeToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
           </div>
           
-          <div class="results-container" id="results">
-            <div class="empty-state">
-              <div class="empty-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                  <rect x="9" y="3" width="6" height="4" rx="1"/>
-                  <path d="M9 14l2 2 4-4"/>
-                </svg>
+          <div class="settings-card">
+            <h3>Analysis</h3>
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">Auto-expand Results</span>
+                <span class="setting-desc">Automatically show detailed predictions</span>
               </div>
-              <p>Upload images to begin analysis</p>
-              <span>Results will appear here</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="autoExpandToggle">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">Show Confidence Scores</span>
+                <span class="setting-desc">Display AI confidence percentages</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="showConfidenceToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
             </div>
           </div>
-        </section>
+          
+          <div class="settings-card">
+            <h3>About</h3>
+            <div class="about-info">
+              <p><strong>HistoPath AI</strong> v1.0</p>
+              <p>Breast histopathology cancer detection using deep learning.</p>
+              <p class="model-details">Model: ResNet-50 trained on BreaKHis dataset</p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
+  </div>
+
+  <!-- Image Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button type="button" class="lightbox-close" id="lightboxClose">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div class="lightbox-content">
+      <img id="lightboxImage" src="" alt="Patch preview">
+      <div class="lightbox-info" id="lightboxInfo">
+        <span class="lightbox-filename"></span>
+        <span class="lightbox-prediction"></span>
+      </div>
+    </div>
+    <button type="button" class="lightbox-nav prev" id="lightboxPrev">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15,18 9,12 15,6"/>
+      </svg>
+    </button>
+    <button type="button" class="lightbox-nav next" id="lightboxNext">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9,18 15,12 9,6"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Loading Overlay -->
@@ -211,6 +390,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <script src="/static/main.js"></script>
 </body>

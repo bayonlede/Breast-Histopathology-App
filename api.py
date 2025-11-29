@@ -63,14 +63,30 @@ async def predict(
 
         with torch.no_grad():
             outputs = model(input_tensor)
-            _, predicted = torch.max(outputs, 1)
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            confidence, predicted = torch.max(probabilities, 1)
 
         label = idx_to_label[predicted.item()]
-        results.append({"filename": file.filename, "prediction": label})
+        conf_percent = round(confidence.item() * 100, 1)
+        
+        results.append({
+            "filename": file.filename, 
+            "prediction": label,
+            "confidence": conf_percent
+        })
+
+    # Calculate summary statistics
+    benign_count = sum(1 for r in results if r["prediction"] == "benign")
+    malignant_count = sum(1 for r in results if r["prediction"] == "malignant")
+    avg_confidence = round(sum(r["confidence"] for r in results) / len(results), 1) if results else 0
 
     return {
         "slide_id": slide_id,
         "num_patches": len(results),
+        "benign_count": benign_count,
+        "malignant_count": malignant_count,
+        "malignant_ratio": round(malignant_count / len(results) * 100, 1) if results else 0,
+        "avg_confidence": avg_confidence,
         "patch_predictions": results
     }
 
